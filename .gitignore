@@ -102,3 +102,6 @@ ENV/
 
 .DS_Store
 models/**/*.pth.tar
+recognition/arcface_torch/work_dirs
+data
+.ipynb
