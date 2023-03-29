@@ -40,10 +40,14 @@ def get_dataloader(
 
     # Image Folder
     else:
+        image_size = 112
+        aihub_mean = [0.5444, 0.4335, 0.3800]
+        aihub_std = [0.2672, 0.2295, 0.2156]
         transform = transforms.Compose([
+             transforms.Resize(size=(image_size, image_size)),
              transforms.RandomHorizontalFlip(),
              transforms.ToTensor(),
-             transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
+             transforms.Normalize(mean=aihub_mean, std=aihub_std),
              ])
         train_set = ImageFolder(root_dir, transform)
 
