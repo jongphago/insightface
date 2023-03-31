@@ -17,6 +17,8 @@ from utils.utils_callbacks import CallBackLogging, CallBackVerification
 from utils.utils_config import get_config
 from utils.utils_distributed_sampler import setup_seed
 from utils.utils_logging import AverageMeter, init_logging
+from aihub_dataloader import aihub_dataloader
+from validate_aihub import validate_aihub
 
 assert (
     torch.__version__ >= "1.12.0"
@@ -103,6 +105,12 @@ def main(args):
     backbone = get_model(
         cfg.network, dropout=0.0, fp16=cfg.fp16, num_features=cfg.embedding_size
     ).cuda()
+
+    if cfg.pretrained:
+        model_weights = torch.load(
+            f"/home/jupyter/face/utils/model/arcface/{cfg.network}/backbone.pth"
+        )
+        backbone.load_state_dict(model_weights)
 
     backbone = torch.nn.parallel.DistributedDataParallel(
         module=backbone,
@@ -251,7 +259,8 @@ def main(args):
                 )
 
                 if global_step % cfg.verbose == 0 and global_step > 0:
-                    callback_verification(global_step, backbone)
+                    # callback_verification(global_step, backbone)
+                    validate_aihub(backbone, aihub_dataloader, cfg.network, 0)
 
         if cfg.save_all_states:
             checkpoint = {

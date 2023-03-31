@@ -19,6 +19,7 @@ config.lr = 0.02
 config.verbose = 2000
 config.dali = False
 config.save_all_states = True
+config.pretrained = True
 
 config.rec = "/home/jupyter/data/face-image/train_aihub_family"
 config.num_classes = 2154
