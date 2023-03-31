@@ -104,3 +104,5 @@ ENV/
 models/**/*.pth.tar
 recognition/arcface_torch/work_dirs
 data
+work_dirs/aihub_r50_onegpu/tensorboard/*
+**/*.pt
