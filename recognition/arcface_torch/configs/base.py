@@ -49,11 +49,12 @@ config.seed = 2048
 config.num_workers = 2
 
 # WandB Logger
-config.wandb_key = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-config.suffix_run_name = None
-config.using_wandb = False
-config.wandb_entity = "entity"
-config.wandb_project = "project"
+with open("/home/jongphago/insightface/wandb/.credential", "r") as f:
+    config.wandb_key = f.read().strip()
+config.suffix_run_name = "ArcFace"
+config.using_wandb = True
+config.wandb_entity = "jongphago"
+config.wandb_project = "arcface-finetune-with-aihub"
 config.wandb_log_all = True
 config.save_artifacts = False
 config.wandb_resume = False # resume wandb run: Only if the you wand t resume the last run that it was interrupted

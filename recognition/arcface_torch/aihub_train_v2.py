@@ -85,7 +85,7 @@ def main(args):
                     sync_tensorboard=True,
                     resume=cfg.wandb_resume,
                     name=run_name,
-                    notes=cfg.notes,
+                    # notes=cfg.notes,
                 )
                 if rank == 0 or cfg.wandb_log_all
                 else None

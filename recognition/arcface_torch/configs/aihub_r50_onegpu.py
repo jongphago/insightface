@@ -41,7 +41,7 @@ config.data = edict()
 config.data.image_size = 112
 config.data.aihub_mean = [0.5444, 0.4335, 0.3800]
 config.data.aihub_std = [0.2672, 0.2295, 0.2156]
-config.data.pairs_path = return_pairs_path # function
+config.data.pairs_path = return_pairs_path  # function
 
 config.data.test = edict()
 config.data.test.path = edict()
