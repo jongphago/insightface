@@ -62,7 +62,7 @@ class ArcFace(torch.nn.Module):
     """
     def __init__(self, s=64.0, margin=0.5):
         super(ArcFace, self).__init__()
-        self.scale = s
+        self.s = s
         self.margin = margin
         self.cos_m = math.cos(margin)
         self.sin_m = math.sin(margin)
