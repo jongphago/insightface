@@ -13,6 +13,7 @@ from partial_fc_v2 import PartialFC_V2
 from torch import distributed
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 from utils.utils_callbacks import CallBackLogging, CallBackVerification
 from utils.utils_config import get_config
 from utils.utils_distributed_sampler import setup_seed
@@ -42,10 +43,10 @@ except KeyError:
     )
 
 
-def main(args):
-
+def main():
     # get config
-    cfg = get_config(args.config)
+    config_path = "configs/aihub_r50_onegpu"
+    cfg = get_config(config_path)
     # global control random seed
     setup_seed(seed=cfg.seed, cuda_deterministic=False)
 
@@ -92,6 +93,9 @@ def main(args):
             )
             if wandb_logger:
                 wandb_logger.config.update(cfg)
+
+            learning_rate = cfg.lr
+
         except Exception as e:
             print(
                 "WandB Data (Entity and Project name) must be provided in config file (base.py)."
@@ -212,7 +216,6 @@ def main(args):
     amp = torch.cuda.amp.grad_scaler.GradScaler(growth_interval=100)
 
     for epoch in range(start_epoch, cfg.num_epoch):
-
         if isinstance(train_loader, DataLoader):
             train_loader.sampler.set_epoch(epoch)
         for _, (img, local_labels) in enumerate(train_loader):
@@ -300,9 +303,19 @@ def main(args):
 
 
 if __name__ == "__main__":
+    sweep_configuration = {
+        "method": "grid",
+        "name": "sweep",
+        "metric": {"name": "val_acc", "goal": "maximize"},
+        "parameters": {
+            "learning_rate": {"values": [0.2, 0.02, 0.002]},
+        },
+        "early_terminate": {"type": "hyperband", "min_iter": 3},
+    }
+
     torch.backends.cudnn.benchmark = True
-    parser = argparse.ArgumentParser(
-        description="Distributed Arcface Training in Pytorch"
+    sweep_id = wandb.sweep(
+        sweep_configuration,
+        project="arcface-hparams-optimization-aihub-age",
     )
-    parser.add_argument("config", type=str, help="py config file")
-    main(parser.parse_args())
+    wandb.agent(sweep_id, main)

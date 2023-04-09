@@ -11,9 +11,6 @@
             "program": "/home/jongphago/insightface/recognition/arcface_torch/aihub_train_v2.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args":[
-                "configs/aihub_r50_onegpu",
-            ]
         },
         {
             "name": "Python: Current File",

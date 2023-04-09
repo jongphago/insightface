@@ -17,7 +17,7 @@ config.momentum = 0.9
 config.weight_decay = 5e-4
 config.batch_size = 128
 config.lr = 0.02
-config.verbose = 500
+config.verbose = 200
 config.dali = False
 config.save_all_states = True
 config.pretrained = True
@@ -26,7 +26,7 @@ config.dropout = 0.0
 config.rec = "/home/jupyter/data/face-image/train_aihub_family"
 config.num_classes = 2154
 config.num_image = 93006
-config.num_epoch = 20
+config.num_epoch = 5
 config.warmup_epoch = 0
 config.val_targets = ['lfw', 'cfp_fp', "agedb_30"]
 
