@@ -93,8 +93,17 @@ def main():
             )
             if wandb_logger:
                 wandb_logger.config.update(cfg)
-
-            learning_rate = cfg.lr
+            # Hyper parameters from wandb
+            margin_list = wandb.config.margin_list
+            network = wandb.config.network
+            embedding_size = wandb.config.embedding_size
+            sample_rate = wandb.config.sample_rate
+            momentum = wandb.config.momentum  # SGD only
+            weight_decay = wandb.config.weight_decay
+            lr = wandb.config.lr
+            dropout = wandb.config.dropout
+            num_epoch = wandb.config.num_epoch
+            optimizer = wandb.config.optimizer
 
         except Exception as e:
             print(
@@ -107,12 +116,12 @@ def main():
     )
 
     backbone = get_model(
-        cfg.network, dropout=0.0, fp16=cfg.fp16, num_features=cfg.embedding_size
+        network, dropout=dropout, fp16=cfg.fp16, num_features=embedding_size
     ).cuda()
 
     if cfg.pretrained:
         model_weights = torch.load(
-            f"/home/jupyter/face/utils/model/arcface/{cfg.network}/backbone.pth"
+            f"/home/jupyter/face/utils/model/arcface/{network}/backbone.pth"
         )
         backbone.load_state_dict(model_weights)
 
@@ -130,15 +139,15 @@ def main():
 
     margin_loss = CombinedMarginLoss(
         64,
-        cfg.margin_list[0],
-        cfg.margin_list[1],
-        cfg.margin_list[2],
+        margin_list[0],
+        margin_list[1],
+        margin_list[2],
         cfg.interclass_filtering_threshold,
     )
 
-    if cfg.optimizer == "sgd":
+    if optimizer == "sgd":
         module_partial_fc = PartialFC_V2(
-            margin_loss, cfg.embedding_size, cfg.num_classes, cfg.sample_rate, cfg.fp16
+            margin_loss, embedding_size, cfg.num_classes, sample_rate, cfg.fp16
         )
         module_partial_fc.train().cuda()
         # TODO the params of partial fc must be last in the params list
@@ -147,14 +156,14 @@ def main():
                 {"params": backbone.parameters()},
                 {"params": module_partial_fc.parameters()},
             ],
-            lr=cfg.lr,
-            momentum=0.9,
-            weight_decay=cfg.weight_decay,
+            lr=lr,
+            momentum=momentum,
+            weight_decay=weight_decay,
         )
 
-    elif cfg.optimizer == "adamw":
+    elif optimizer == "adamw":
         module_partial_fc = PartialFC_V2(
-            margin_loss, cfg.embedding_size, cfg.num_classes, cfg.sample_rate, cfg.fp16
+            margin_loss, embedding_size, cfg.num_classes, sample_rate, cfg.fp16
         )
         module_partial_fc.train().cuda()
         opt = torch.optim.AdamW(
@@ -162,19 +171,19 @@ def main():
                 {"params": backbone.parameters()},
                 {"params": module_partial_fc.parameters()},
             ],
-            lr=cfg.lr,
-            weight_decay=cfg.weight_decay,
+            lr=lr,
+            weight_decay=weight_decay,
         )
     else:
         raise
 
     cfg.total_batch_size = cfg.batch_size * world_size
     cfg.warmup_step = cfg.num_image // cfg.total_batch_size * cfg.warmup_epoch
-    cfg.total_step = cfg.num_image // cfg.total_batch_size * cfg.num_epoch
+    cfg.total_step = cfg.num_image // cfg.total_batch_size * num_epoch
 
     lr_scheduler = PolyScheduler(
         optimizer=opt,
-        base_lr=cfg.lr,
+        base_lr=lr,
         max_steps=cfg.total_step,
         warmup_steps=cfg.warmup_step,
         last_epoch=-1,
@@ -215,7 +224,7 @@ def main():
     loss_am = AverageMeter()
     amp = torch.cuda.amp.grad_scaler.GradScaler(growth_interval=100)
 
-    for epoch in range(start_epoch, cfg.num_epoch):
+    for epoch in range(start_epoch, num_epoch):
         if isinstance(train_loader, DataLoader):
             train_loader.sampler.set_epoch(epoch)
         for _, (img, local_labels) in enumerate(train_loader):
@@ -248,6 +257,7 @@ def main():
                             "Loss/Train Loss": loss_am.avg,
                             "Process/Step": global_step,
                             "Process/Epoch": epoch,
+                            "Learning rate": lr_scheduler.get_last_lr()[0],
                         }
                     )
 
@@ -263,7 +273,7 @@ def main():
 
                 if global_step % cfg.verbose == 0 and global_step > 0:
                     # callback_verification(global_step, backbone)
-                    validate_aihub(backbone, aihub_dataloader, cfg.network, 0)
+                    validate_aihub(backbone, aihub_dataloader, network, 0)
 
         if cfg.save_all_states:
             checkpoint = {
@@ -304,14 +314,33 @@ def main():
 
 if __name__ == "__main__":
     sweep_configuration = {
-        "method": "grid",
-        "name": "sweep",
-        "metric": {"name": "val_acc", "goal": "maximize"},
+        "name": "ArcFace Hyperparameter Optimization",
+        "method": "bayes",
+        "metric": {
+            "name": "val_acc",
+            "goal": "maximize"
+        },
         "parameters": {
-            "learning_rate": {"values": [0.2, 0.02, 0.002]},
+            "lr": {"min": 1e-4, "max": 0.1, "distribution": "log_uniform"},
+            "margin_list": {
+                "values": [
+                    (1.0, 0.5, 0.0),
+                    (0.8, 0.4, 0.0),
+                    (1.2, 0.6, 0.0)
+                ]
+            },
+            "network": {"values": ["r50"]},
+            "embedding_size": {"values": [512, 1024]},
+            "sample_rate": {"min": 0.5, "max": 1.0, "distribution": "uniform"},
+            "momentum": {"min": 0.5, "max": 0.99, "distribution": "uniform"},
+            "weight_decay": {"min": 1e-5, "max": 1e-3, "distribution": "log_uniform"},
+            "dropout": {"min": 0.0, "max": 0.5, "distribution": "uniform"},
+            "num_epoch": {"values": [1, 5, 10]},
+            "optimizer": {"values": ["sgd", "adamw"]},
         },
         "early_terminate": {"type": "hyperband", "min_iter": 3},
     }
+
 
     torch.backends.cudnn.benchmark = True
     sweep_id = wandb.sweep(
