@@ -28,14 +28,16 @@ class AverageMeter(object):
 
 
 def init_logging(rank, models_root):
-    if rank == 0:
-        log_root = logging.getLogger()
-        log_root.setLevel(logging.INFO)
-        formatter = logging.Formatter("Training: %(asctime)s-%(message)s")
-        handler_file = logging.FileHandler(os.path.join(models_root, "training.log"))
-        handler_stream = logging.StreamHandler(sys.stdout)
-        handler_file.setFormatter(formatter)
-        handler_stream.setFormatter(formatter)
-        log_root.addHandler(handler_file)
-        log_root.addHandler(handler_stream)
-        log_root.info('rank_id: %d' % rank)
+    log_root = logging.getLogger()
+    if not log_root.handlers:  # 이미 핸들러가 있는 경우 새로운 핸들러를 추가하지 않습니다.
+        if rank == 0:
+            log_root = logging.getLogger()
+            log_root.setLevel(logging.INFO)
+            formatter = logging.Formatter("Training: %(asctime)s-%(message)s")
+            handler_file = logging.FileHandler(os.path.join(models_root, "training.log"))
+            handler_stream = logging.StreamHandler(sys.stdout)
+            handler_file.setFormatter(formatter)
+            handler_stream.setFormatter(formatter)
+            log_root.addHandler(handler_file)
+            log_root.addHandler(handler_stream)
+            log_root.info('rank_id: %d' % rank)
