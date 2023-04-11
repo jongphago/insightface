@@ -67,7 +67,7 @@ def main():
 
         # Sign in to wandb
         try:
-            wandb.login(key=cfg.wandb_key)
+            wandb.login(key=cfg.wandb_key, relogin=True)
         except Exception as e:
             print("WandB Key must be provided in config file (base.py).")
             print(f"Config Error: {e}")
@@ -272,8 +272,34 @@ def main():
                 )
 
                 if global_step % cfg.verbose == 0 and global_step > 0:
-                    # callback_verification(global_step, backbone)
-                    validate_aihub(backbone, aihub_dataloader, network, 0)
+                    best_distances, (
+                        accuracy,
+                        precision,
+                        recall,
+                        roc_auc,
+                        tar,
+                        far,
+                    ) = validate_aihub(backbone, aihub_dataloader, network, 0)
+
+                    val_accuracy = np.mean(accuracy)
+                    val_precision = np.mean(precision)
+                    val_recall = np.mean(recall)
+                    val_best_distances = np.mean(best_distances)
+                    val_tar = np.mean(tar)
+                    val_far = np.mean(far)
+
+                    if wandb_logger:
+                        wandb_logger.log(
+                            {
+                                "val_accuracy": val_accuracy,
+                                "val_precision": val_precision,
+                                "val_recall": val_recall,
+                                "val_best_distances": val_best_distances,
+                                "val_tar": val_tar,
+                                "val_far": val_far,
+                                "roc_auc": roc_auc,
+                            }
+                        )
 
         if cfg.save_all_states:
             checkpoint = {
@@ -316,35 +342,49 @@ if __name__ == "__main__":
     sweep_configuration = {
         "name": "ArcFace Hyperparameter Optimization",
         "method": "bayes",
-        "metric": {
-            "name": "val_acc",
-            "goal": "maximize"
-        },
+        "metric": {"name": "val_accuracy", "goal": "maximize"},
         "parameters": {
-            "lr": {"min": 1e-4, "max": 0.1, "distribution": "log_uniform"},
+            "lr": {"values": [0.2, 0.02, 0.002]},
             "margin_list": {
                 "values": [
                     (1.0, 0.5, 0.0),
-                    (0.8, 0.4, 0.0),
-                    (1.2, 0.6, 0.0)
+                    # (0.8, 0.4, 0.0),
+                    # (1.2, 0.6, 0.0)
                 ]
             },
             "network": {"values": ["r50"]},
-            "embedding_size": {"values": [512, 1024]},
-            "sample_rate": {"min": 0.5, "max": 1.0, "distribution": "uniform"},
-            "momentum": {"min": 0.5, "max": 0.99, "distribution": "uniform"},
-            "weight_decay": {"min": 1e-5, "max": 1e-3, "distribution": "log_uniform"},
+            "embedding_size": {"values": [512]},
+            "sample_rate": {"min": 0.7, "max": 1.0, "distribution": "uniform"},
+            "momentum": {
+                "values": [
+                    0.9,
+                    0.99,
+                    0.999,
+                ]
+            },
+            "weight_decay": {
+                "values": [
+                    5e-5,
+                    5e-4,
+                    5e-3,
+                ]
+            },
             "dropout": {"min": 0.0, "max": 0.5, "distribution": "uniform"},
-            "num_epoch": {"values": [1, 5, 10]},
-            "optimizer": {"values": ["sgd", "adamw"]},
+            "num_epoch": {"values": [1]},
+            "optimizer": {
+                "values": [
+                    "sgd",
+                    "adamw",
+                ]
+            },
         },
         "early_terminate": {"type": "hyperband", "min_iter": 3},
     }
 
-
     torch.backends.cudnn.benchmark = True
     sweep_id = wandb.sweep(
         sweep_configuration,
+        entity="jongphago",
         project="arcface-hparams-optimization-aihub-age",
     )
     wandb.agent(sweep_id, main)

@@ -54,7 +54,7 @@ with open("/home/jongphago/insightface/wandb/.credential", "r") as f:
 config.suffix_run_name = "ArcFace"
 config.using_wandb = True
 config.wandb_entity = "jongphago"
-config.wandb_project = "arcface-finetune-with-aihub"
+config.wandb_project = "arcface-hparams-optimization-aihub-age"
 config.wandb_log_all = True
 config.save_artifacts = False
 config.wandb_resume = False # resume wandb run: Only if the you wand t resume the last run that it was interrupted
