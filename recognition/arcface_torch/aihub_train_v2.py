@@ -92,7 +92,8 @@ def main():
                 else None
             )
             if wandb_logger:
-                wandb_logger.config.update(cfg)
+                # wandb_logger.config.update(cfg)
+                pass
             # Hyper parameters from wandb
             margin_list = wandb.config.margin_list
             network = wandb.config.network
@@ -370,15 +371,15 @@ if __name__ == "__main__":
                 ]
             },
             "dropout": {"min": 0.0, "max": 0.5, "distribution": "uniform"},
-            "num_epoch": {"values": [1]},
+            "num_epoch": {"values": [1, 2, 5]},
             "optimizer": {
                 "values": [
                     "sgd",
-                    "adamw",
+                    # "adamw",
                 ]
             },
         },
-        "early_terminate": {"type": "hyperband", "min_iter": 3},
+        "early_terminate": {"type": "hyperband", "min_iter": 1},
     }
 
     torch.backends.cudnn.benchmark = True
