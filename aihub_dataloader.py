@@ -24,7 +24,7 @@ aihub_transforms = transforms.Compose(
 aihub_dataloader = torch.utils.data.DataLoader(
     dataset=AIHubDataset(
         dir=aihub_dataroot,
-        pairs_path="data/pairs/valid/pairs_Family.txt",
+        pairs_path="data/pairs/valid/pairs_Age.txt",
         transform=aihub_transforms,
     ),
     batch_size=lfw_batch_size,
