@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose
 from easydict import EasyDict
-from datasets.AIHubDataset import AIHubDataset
+from facenet.datasets.AIHubDataset import AIHubDataset
 
 
 def get_config(config_file):
