@@ -3,8 +3,8 @@ import torchvision.transforms as transforms
 from easydict import EasyDict as edict
 from recognition.arcface_torch.backbones import get_model
 from recognition.arcface_torch.configs.aihub_r50_onegpu import config as cfg
-from datasets.AIHubDataset import AIHubDataset
-from validate_aihub import validate_aihub
+from facenet.datasets.AIHubDataset import AIHubDataset
+from facenet.validate_aihub import validate_aihub
 
 aihub_dataroot = "/home/jupyter/data/face-image/valid_aihub_family"
 num_workers = 4

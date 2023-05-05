@@ -1,5 +1,5 @@
 from easydict import EasyDict as edict
-from utils.utils_config import return_pairs_path
+from arcface_torch.utils.utils_config import return_pairs_path
 
 # make training faster
 # our RAM is 256G

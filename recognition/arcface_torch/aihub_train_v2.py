@@ -19,7 +19,7 @@ from utils.utils_config import get_config
 from utils.utils_distributed_sampler import setup_seed
 from utils.utils_logging import AverageMeter, init_logging
 from aihub_dataloader import aihub_dataloader
-from validate_aihub import validate_aihub
+from facenet.validate_aihub import validate_aihub
 
 assert (
     torch.__version__ >= "1.12.0"
